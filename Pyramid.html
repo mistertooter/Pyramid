@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Animated Pyramid Builder</title>
+
+<style>
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background:
+    radial-gradient(circle at 50% 25%, #17365d 0%, #071426 40%, #020711 80%);
+  font-family: Arial, sans-serif;
+  overflow: hidden;
+  color: white;
+}
+
+/* Instagram-friendly 3:4 canvas */
+.scene {
+  position: relative;
+  width: min(90vw, 600px);
+  aspect-ratio: 3 / 4;
+  overflow: hidden;
+  border-radius: 24px;
+  background:
+    radial-gradient(circle at 50% 15%,
+      rgba(0, 217, 255, .18),
+      transparent 35%);
+  box-shadow:
+    0 0 50px rgba(0, 200, 255, .18),
+    inset 0 0 50px rgba(0, 0, 0, .6);
+}
+
+/* Stars */
+.stars {
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(white 1px, transparent 1px),
+    radial-gradient(#56eaff 1px, transparent 1px);
+  background-size: 45px 45px, 75px 75px;
+  background-position: 0 0, 20px 25px;
+  opacity: .25;
+}
+
+.title {
+  position: absolute;
+  top: 5%;
+  width: 100%;
+  text-align: center;
+  font-size: clamp(24px, 6vw, 42px);
+  font-weight: 800;
+  letter-spacing: 5px;
+  text-shadow:
+    0 0 8px #00eaff,
+    0 0 20px #008cff;
+}
+
+.subtitle {
+  position: absolute;
+  top: 12%;
+  width: 100%;
+  text-align: center;
+  color: #80eaff;
+  letter-spacing: 2px;
+  font-size: 13px;
+}
+
+/* Ground */
+.ground {
+  position: absolute;
+  left: 5%;
+  right: 5%;
+  bottom: 10%;
+  height: 18%;
+  border-radius: 50%;
+  background:
+    radial-gradient(ellipse,
+      rgba(0, 238, 255, .35),
+      rgba(12, 39, 70, .5) 45%,
+      transparent 70%);
+  transform: perspective(300px) rotateX(65deg);
+  filter: blur(2px);
+}
+
+/* Pyramid container */
+#pyramid {
+  position: absolute;
+  left: 50%;
+  bottom: 18%;
+  transform: translateX(-50%);
+  width: 90%;
+  height: 55%;
+}
+
+/* Each row */
+.row {
+  position: absolute;
+  left: 50%;
+  display: flex;
+  justify-content: center;
+  gap: 3px;
+  transform: translateX(-50%);
+}
+
+/* Individual pyramid blocks */
+.block {
+  width: 38px;
+  height: 29px;
+
+  border: 1px solid rgba(255,255,255,.65);
+  border-radius: 3px;
+
+  opacity: 0;
+  transform:
+    translateY(-350px)
+    scale(.2)
+    rotate(20deg);
+
+  box-shadow:
+    inset 0 0 10px rgba(255,255,255,.4),
+    0 0 10px currentColor;
+
+  transition:
+    transform .55s cubic-bezier(.2,.8,.3,1.3),
+    opacity .3s;
+}
+
+.block.show {
+  opacity: 1;
+  transform:
+    translateY(0)
+    scale(1)
+    rotate(0);
+}
+
+/* Shine */
+.block::after {
+  content: "";
+  position: absolute;
+  inset: 3px;
+  border-radius: 2px;
+  background:
+    linear-gradient(
+      135deg,
+      rgba(255,255,255,.55),
+      transparent 45%
+    );
+  opacity: .5;
+}
+
+/* Energy glow */
+.energy {
+  position: absolute;
+  left: 50%;
+  bottom: 16%;
+  width: 75%;
+  height: 5px;
+  transform: translateX(-50%);
+  background: #00eaff;
+  box-shadow:
+    0 0 10px #00eaff,
+    0 0 30px #00eaff,
+    0 0 60px #008cff;
+  animation: energyPulse 1.4s infinite alternate;
+}
+
+@keyframes energyPulse {
+  from {
+    opacity: .3;
+    width: 55%;
+  }
+  to {
+    opacity: 1;
+    width: 85%;
+  }
+}
+
+.status {
+  position: absolute;
+  bottom: 7%;
+  width: 100%;
+  text-align: center;
+  font-size: 14px;
+  color: #8ef5ff;
+  letter-spacing: 2px;
+}
+
+button {
+  position: absolute;
+  bottom: 2%;
+  left: 50%;
+  transform: translateX(-50%);
+
+  border: 1px solid #00eaff;
+  border-radius: 20px;
+  padding: 9px 24px;
+
+  background: rgba(0, 220, 255, .12);
+  color: white;
+  cursor: pointer;
+
+  box-shadow: 0 0 15px rgba(0, 220, 255, .4);
+}
+
+button:hover {
+  background: #00d9ff;
+  color: #00101c;
+}
+
+/* Dust particles */
+.particle {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #fff3a1;
+  pointer-events: none;
+
+  animation: particleMove 1.2s linear forwards;
+}
+
+@keyframes particleMove {
+  from {
+    opacity: 1;
+    transform: translate(0, 0) scale(1);
+  }
+
+  to {
+    opacity: 0;
+    transform:
+      translate(
+        var(--x),
+        var(--y)
+      )
+      scale(.1);
+  }
+}
+</style>
+</head>
+
+<body>
+
+<div class="scene" id="scene">
+
+  <div class="stars"></div>
+
+  <div class="title">PYRAMID</div>
+  <div class="subtitle">
+    SELF-ASSEMBLY SEQUENCE
+  </div>
+
+  <div class="ground"></div>
+
+  <div id="pyramid"></div>
+
+  <div class="energy"></div>
+
+  <div class="status" id="status">
+    BUILDING FROM FOUNDATION...
+  </div>
+
+  <button onclick="buildPyramid()">
+    REBUILD
+  </button>
+
+</div>
+
+<script>
+
+const pyramid = document.getElementById("pyramid");
+const statusText = document.getElementById("status");
+const scene = document.getElementById("scene");
+
+/*
+   Number of blocks per level.
+
+   Bottom:
+   █████████
+
+   Then:
+    ████████
+     ███████
+      ██████
+       █████
+        ████
+         ███
+          ██
+           █
+*/
+
+const levels = [
+  9, 8, 7, 6, 5,
+  4, 3, 2, 1
+];
+
+const colors = [
+  "#ff3b81",
+  "#ff7138",
+  "#ffc83d",
+  "#73ff69",
+  "#00e5ff",
+  "#168cff",
+  "#755cff",
+  "#c64dff",
+  "#ff52d9"
+];
+
+
+/* -------------------------
+   CREATE PYRAMID
+------------------------- */
+
+function createPyramid() {
+
+  pyramid.innerHTML = "";
+
+  levels.forEach((blocks, level) => {
+
+    const row = document.createElement("div");
+
+    row.className = "row";
+
+    /*
+       level 0 = bottom
+       higher numbers move upward
+    */
+
+    row.style.bottom =
+      (level * 31) + "px";
+
+    for (let i = 0; i < blocks; i++) {
+
+      const block =
+        document.createElement("div");
+
+      block.className = "block";
+
+      block.style.background =
+        `linear-gradient(
+          135deg,
+          ${colors[level]},
+          #111c45
+        )`;
+
+      block.style.color =
+        colors[level];
+
+      block.dataset.level = level;
+
+      row.appendChild(block);
+    }
+
+    pyramid.appendChild(row);
+  });
+}
+
+
+/* -------------------------
+   PARTICLE EFFECT
+------------------------- */
+
+function createParticles(block) {
+
+  const blockRect =
+    block.getBoundingClientRect();
+
+  const sceneRect =
+    scene.getBoundingClientRect();
+
+  for (let i = 0; i < 8; i++) {
+
+    const particle =
+      document.createElement("div");
+
+    particle.className = "particle";
+
+    particle.style.left =
+      (blockRect.left -
+       sceneRect.left +
+       blockRect.width / 2) + "px";
+
+    particle.style.top =
+      (blockRect.top -
+       sceneRect.top +
+       blockRect.height / 2) + "px";
+
+    const x =
+      (Math.random() - .5) * 100;
+
+    const y =
+      (Math.random() - .5) * 80;
+
+    particle.style.setProperty(
+      "--x",
+      x + "px"
+    );
+
+    particle.style.setProperty(
+      "--y",
+      y + "px"
+    );
+
+    scene.appendChild(particle);
+
+    setTimeout(() => {
+      particle.remove();
+    }, 1200);
+  }
+}
+
+
+/* -------------------------
+   BUILD ANIMATION
+------------------------- */
+
+async function buildPyramid() {
+
+  createPyramid();
+
+  statusText.textContent =
+    "BUILDING FOUNDATION...";
+
+  const rows =
+    [...document.querySelectorAll(".row")];
+
+  /*
+     Rows are already ordered
+     bottom → top.
+  */
+
+  for (
+    let level = 0;
+    level < rows.length;
+    level++
+  ) {
+
+    statusText.textContent =
+      `BUILDING LEVEL ${level + 1} / ${rows.length}`;
+
+    const blocks =
+      [...rows[level]
+      .querySelectorAll(".block")];
+
+    /*
+       Blocks in each row
+       appear one after another.
+    */
+
+    for (const block of blocks) {
+
+      block.classList.add("show");
+
+      createParticles(block);
+
+      await wait(90);
+    }
+
+    await wait(150);
+  }
+
+  statusText.textContent =
+    "PYRAMID COMPLETE ✓";
+}
+
+
+/* -------------------------
+   TIMER
+------------------------- */
+
+function wait(ms) {
+
+  return new Promise(resolve =>
+    setTimeout(resolve, ms)
+  );
+}
+
+
+/* -------------------------
+   START
+------------------------- */
+
+window.addEventListener(
+  "load",
+  buildPyramid
+);
+
+</script>
+
+</body>
+</html>
